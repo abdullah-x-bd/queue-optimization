@@ -330,6 +330,6 @@ export function solveScenario(input){
   for(const candidate of candidates){let f=candidate.layout.family;if(!byFamily[f]||rank(candidate,byFamily[f])<0)byFamily[f]=candidate}
   const comparisons=[best];
   for(const f of ['dedicated','shared','dual'])if(byFamily[f]&&byFamily[f]!==best)comparisons.push(byFamily[f]);
-  const dedup=[...new Map(comparisons.map(x=>[`${x.layout.family}:${x.layout.roots}:${x.layout.links}:${x.trace.clearance}`,x])).values()];
+  const dedup=[...new Map(comparisons.map(x=>[`${x.layout.family}:${x.layout.roots}:${x.layout.links}`,x])).values()];
   return {config:cfg, theoretical:bound, best, comparisons:dedup, candidatesCount:candidates.length, failures:failures.length, caption:shortCaption(best), status:bound&&best.trace.clearance===bound.clearance?'proven':'feasible'};
 }

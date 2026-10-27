@@ -181,7 +181,9 @@ function share(){
   const cfg=readConfig(),u=new URL(location.href);u.search='';u.searchParams.set('n',cfg.N);u.searchParams.set('m',cfg.m);
   if(cfg.times.every(t=>t===cfg.times[0]))u.searchParams.set('p',cfg.times[0]);else u.searchParams.set('ps',cfg.times.join(','));
   u.searchParams.set('k',cfg.KM);u.searchParams.set('q',cfg.Q0);if(cfg.receiving==='turnover')u.searchParams.set('r','turnover');
-  navigator.clipboard?.writeText(u.toString()).then(()=>toast('Scenario link copied')).catch(()=>toast('Link: '+u.toString()));
+  const link=u.toString();
+  if(navigator.clipboard?.writeText){navigator.clipboard.writeText(link).then(()=>toast('Scenario link copied')).catch(()=>toast('Copy this link: '+link))}
+  else {const field=document.createElement('textarea');field.value=link;field.style.position='fixed';field.style.opacity='0';document.body.append(field);field.select();const copied=document.execCommand('copy');field.remove();toast(copied?'Scenario link copied':'Copy this link: '+link)}
 }
 function exportData(){
   if(!selected||!model)return;
