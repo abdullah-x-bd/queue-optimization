@@ -1,0 +1,12 @@
+\textbf{Joint counter placement.} If the same three physical counters may be placed at any of the three service sites, the optimum improves to 16 ticks. The joint solver selects the fastest counter in the middle. Checking all six assignments independently confirms the result:
+\begin{center}\small
+\begin{tabular}{lr}\toprule
+Service durations at (top, middle, bottom)&Optimal clearance\\\midrule
+$(2, 4, 3)$ & 17 \\
+$(2, 3, 4)$ & 17 \\
+$(4, 2, 3)$ & 16 \\
+$(4, 3, 2)$ & 17 \\
+$(3, 2, 4)$ & 16 \\
+$(3, 4, 2)$ & 17 \\
+\bottomrule\end{tabular}\end{center}
+Each permutation is itself optimized over all candidate corridors and cells. These examples demonstrate finite spatial synthesis, including discrete placement; they do not establish an optimal continuous building geometry.

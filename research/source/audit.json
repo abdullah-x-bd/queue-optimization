@@ -1,0 +1,10 @@
+{
+  "generic_traces": 195,
+  "baseline_traces": 17,
+  "solver_infeasible_records": 82,
+  "strict_constructive_checks": 8960,
+  "slack_constructive_checks": 432,
+  "turnover_constructive_checks": 3600,
+  "stochastic_policy_traces": 14000,
+  "exhaustive_policy_traces": 28672
+}
