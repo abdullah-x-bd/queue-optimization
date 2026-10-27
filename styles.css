@@ -309,3 +309,5 @@ body {
 .comparison-item{border-radius:6px}
 .control-panel .optimize-button{height:40px}
 .control-foot{opacity:.75}
+
+.pipe-position.pipe-staging{stroke-dasharray:2 2;stroke-opacity:.62}

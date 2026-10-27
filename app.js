@@ -106,9 +106,35 @@ function coords(cfg){
 const path=(a,b)=>`M ${a[0]} ${a[1]} L ${b[0]} ${b[1]}`;
 const bez=(a,b,s=0.56)=>`M ${a[0]} ${a[1]} C ${a[0]+(b[0]-a[0])*s} ${a[1]} ${b[0]-(b[0]-a[0])*s} ${b[1]} ${b[0]} ${b[1]}`;
 const circle=(x,y,r,cls)=>`<circle cx="${x}" cy="${y}" r="${r}" class="${cls}"/>`;
-// People occupy explicit positions along a continuous queue lane. The underlying
-// two finite-capacity A/B approach cells are unchanged; the pipeline is their
-// visual representation, not a different scheduling or receiving model.
+// Only A/B buffers contribute to the mathematical four-place lane capacity.
+// The two extra visible positions are people staged from the source awaiting
+// their scheduled admission. They remain in X0 until their recorded move.
+const admissionCache=new WeakMap();
+function admissionsByRoot(trace){
+  let cached=admissionCache.get(trace);
+  if(cached)return cached;
+  cached=new Map();
+  for(const batch of trace.events){
+    for(const ev of batch||[]){
+      if(ev.from!=='X0'||!ev.to.startsWith('A'))continue;
+      const row=Number(ev.to.slice(1));
+      if(!cached.has(row))cached.set(row,[]);
+      cached.get(row).push({id:ev.id,t:ev.t});
+    }
+  }
+  admissionCache.set(trace,cached);
+  return cached;
+}
+function sourceStaging(trace,positions,roots){
+  const placements=new Map(),count=new Map(),all=admissionsByRoot(trace);
+  for(const row of roots){
+    const pending=(all.get(row)||[]).filter(ev=>positions[ev.id]==='X0').slice(0,2);
+    count.set(row,pending.length);
+    pending.forEach((ev,i)=>placements.set(ev.id,[i===0?218:179,row]));
+  }
+  return {placements,count};
+}
+// Each A/B person is positioned directly from the independently verified trace.
 function laneSlot(node,id,positions,c){
   const type=node[0],j=+node.slice(1);
   const neighbors=[];
@@ -126,15 +152,15 @@ function actorPosition(node,id,c,positions){
   return p;
 }
 function pipelineSegment(x1,x2,y,full,n){
-  // The four place markings are intentionally subtle; occupants are drawn
-  // from actual replay snapshots, not from independently animated decorations.
-  const seats=full?[255,294,410,449]:[410,449];
+  // Root feeder lanes have two source-staging positions plus four finite
+  // approach-buffer places. Branch-only lanes retain their two B places.
+  const seats=full?[179,218,255,294,410,449]:[410,449];
   return `<g class="pipeline ${full?'':'pipeline-partial'}">
     <rect x="${x1}" y="${y-17}" width="${x2-x1}" height="34" rx="17" class="pipe-shell"/>
     <path d="M${x1+15} ${y-11}H${x2-15}" class="pipe-highlight"/>
     <path d="M${x1+15} ${y+11}H${x2-15}" class="pipe-lowlight"/>
-    ${seats.map(x=>`<circle cx="${x}" cy="${y}" r="5.2" class="pipe-position"/>`).join('')}
-    <text x="${x2-12}" y="${y-24}" text-anchor="end" class="pipe-occupancy">${n} WAITING</text>
+    ${seats.map((x,i)=>`<circle cx="${x}" cy="${y}" r="5.2" class="pipe-position${full&&i<2?' pipe-staging':''}"/>`).join('')}
+    <text x="${x2-12}" y="${y-24}" text-anchor="end" class="pipe-occupancy">${n} IN LINE</text>
   </g>`;
 }
 function paint(){
@@ -150,6 +176,7 @@ function paint(){
     if(node.startsWith('C'))startsByCounter[+node.slice(1)]={id,age:position-state.starts[id]};
   }
   const moving=new Map(events.map(e=>[e.id,e]));
+  const staging=sourceStaging(trace,positions,lo.roots);
   const rows=Array.from({length:cfg.m},(_,i)=>i),html=[];
   html.push(`<defs><pattern id="dotGrid" x="0" y="0" width="29" height="29" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".55" fill="#41645e" opacity=".22"/></pattern><linearGradient id="pipeSurface" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1d3035"/><stop offset=".51" stop-color="#16262d"/><stop offset="1" stop-color="#101e25"/></linearGradient><linearGradient id="stationSurface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#24343b"/><stop offset="1" stop-color="#1b292f"/></linearGradient></defs>`);
   html.push(`<rect width="1040" height="${c.height}" class="grid-backdrop"/>`);
@@ -158,11 +185,11 @@ function paint(){
     const y=at(j),pB=point(`B${j}`),pC=point(`C${j}`),pE=point(`E${j}`);
     const hasEntry=lo.roots.includes(j),hasLane=lo.lanes.includes(j),isActive=lo.active.includes(j);
     const pA=point(`A${j}`),waiting=(occupancy[`A${j}`]||0)+(occupancy[`B${j}`]||0);
-    html.push(`<text x="183" y="${y+4}" class="row-number" text-anchor="end">${String(j+1).padStart(2,'0')}</text>`);
-    // Root lanes include A and B capacity places; feeder branches contain B.
+    html.push(`<text x="145" y="${y+4}" class="row-number" text-anchor="end">${String(j+1).padStart(2,'0')}</text>`);
+    // Feeder lanes include two staged source people and four A/B buffer places.
     if(hasEntry&&hasLane){
-      html.push(`<path d="${bez(point('X0'),[210,y])}" class="pipe-feeder"/>`);
-      html.push(pipelineSegment(206,504,y,true,waiting));
+      html.push(`<path d="${bez(point('X0'),[163,y])}" class="pipe-feeder"/>`);
+      html.push(pipelineSegment(162,504,y,true,waiting+(staging.count.get(j)||0)));
     } else if(isActive){
       html.push(pipelineSegment(367,504,y,false,waiting));
     } else {
@@ -174,15 +201,13 @@ function paint(){
     }
     html.push(`<path d="${path(pC,pE)}" class="service-link"/>`);
     html.push(`<path d="${bez(pE,point('M'))}" class="depart-link"/>`);
-    const busy=!!startsByCounter[j],age=busy?Math.max(0,startsByCounter[j].age):0,remaining=busy?Math.max(0,cfg.times[j]-age):0;
+    const busy=!!startsByCounter[j];
     const stationX=pC[0]-65,stationY=y-31;
     html.push(`<g class="station-assembly ${isActive?'':'station-unused'}"><rect x="${stationX}" y="${stationY}" width="130" height="62" rx="8" class="counter-node ${busy?'busy':'idle'}"/><rect x="${stationX+12}" y="${stationY+8}" width="103" height="18" class="station-etch"/>`);
     html.push(`<text x="${stationX+16}" y="${y-11}" class="station-serial">SERVICE / ${String(j+1).padStart(2,'0')}</text>`);
     html.push(`<text x="${stationX+16}" y="${y+7}" class="counter-title">COUNTER ${String(j+1).padStart(2,'0')}</text>`);
-    html.push(`<text x="${stationX+16}" y="${y+23}" class="counter-time">${busy?`PROCESSING · ${Math.ceil(remaining)} LEFT`:`${cfg.times[j]} TICKS / PERSON`}</text>`);
-    html.push(`<rect x="${stationX+16}" y="${stationY+54}" width="99" height="2" rx="1" class="station-track"/>`);
-    if(busy){const progress=clamp(age/cfg.times[j],0,1);html.push(`<rect x="${stationX+16}" y="${stationY+54}" width="${(99*progress).toFixed(2)}" height="2" rx="1" class="station-progress"/>`)}
-    html.push(`<circle cx="${stationX+114}" cy="${stationY+13}" r="3.2" class="station-light ${busy?'on':''}"/><title>Counter ${j+1}, ${cfg.times[j]} ticks per person${busy?`, ${remaining} ticks until service completion`:''}</title></g>`);
+    html.push(`<text x="${stationX+16}" y="${y+22}" class="counter-time">${busy?'PROCESSING':`${cfg.times[j]} TICKS / PERSON`}</text>`);
+    html.push(`<circle cx="${stationX+114}" cy="${stationY+13}" r="3.2" class="station-light ${busy?'on':''}"/><title>Counter ${j+1}: ${cfg.times[j]} ticks per person; ${busy?'processing':'idle'}</title></g>`);
     // A departure cell still stores one person; it is shown as a slim gate.
     html.push(`<rect x="${pE[0]-5}" y="${y-13}" width="10" height="26" rx="4" class="departure-gate"/><title>Departure storage ${j+1}: ${occupancy[`E${j}`]||0}/1</title>`);
   }
@@ -201,11 +226,16 @@ function paint(){
   if(inside>0)html.push(`<text x="${520}" y="${c.height-35}" class="axis-decoration" text-anchor="middle">${inside} PEOPLE INSIDE THE NETWORK</text>`);
   const drawPeople=[];
   for(let id=0;id<cfg.N;id++){
-    const where=positions[id];if(where==='X0'||where==='X1')continue;
-    const ev=moving.get(id),a=actorPosition(where,id,c,positions),b=ev?actorPosition(ev.to,id,c,positions):a;
+    const where=positions[id];if(where==='X1')continue;
+    // Staged people are still counted at the source by the replay and all metrics.
+    const sourcePosition=where==='X0'?staging.placements.get(id):null;
+    if(where==='X0'&&!sourcePosition)continue;
+    const ev=moving.get(id),a=sourcePosition?[sourcePosition[0],at(sourcePosition[1])]:actorPosition(where,id,c,positions),
+      b=ev?actorPosition(ev.to,id,c,positions):a;
     const ease=frac*frac*(3-2*frac),x=a[0]+(b[0]-a[0])*ease,y=a[1]+(b[1]-a[1])*ease;
     const kind=where.startsWith('C')?'agent-in-service':'agent-dot';
-    drawPeople.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${kind==='agent-in-service'?5:5.6}" class="${kind}"><title>Person ${id+1} · ${ev?ev.from+' → '+ev.to:where}</title></circle>`);
+    const place=sourcePosition?'staged at source':where;
+    drawPeople.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${kind==='agent-in-service'?5:5.6}" class="${kind}"><title>Person ${id+1} · ${ev?ev.from+' → '+ev.to:place}</title></circle>`);
   }
   html.push(`<g class="agents">${drawPeople.join('')}</g>`);
   $('network-svg').setAttribute('viewBox',`0 0 1040 ${c.height}`);
