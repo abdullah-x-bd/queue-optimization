@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div class="atmosphere atmosphere-a"></div><div class="atmosphere atmosphere-b"></div>
+  
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="./" aria-label="Queue Topology Lab home">
@@ -36,22 +36,6 @@
         <div class="eyebrow"><span class="eyebrow-line"></span> INTERACTIVE RESEARCH INSTRUMENT <span class="eyebrow-index">/ 01</span></div>
         <h1 id="page-title">The shorter <em>way through.</em></h1>
         <p>Design a queue, minimize its clearance time, and follow every movement.</p>
-      </div>
-      <div class="intro-graphic" aria-hidden="true">
-        <svg viewBox="0 0 360 116" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="heroRoute" x1="35" y1="60" x2="337" y2="60" gradientUnits="userSpaceOnUse"><stop stop-color="#426c6b"/><stop offset=".55" stop-color="#b4dcc4"/><stop offset="1" stop-color="#c9a785"/></linearGradient></defs>
-          <path class="signature-grid" d="M0 18H360M0 58H360M0 98H360M38 0V116M142 0V116M246 0V116M336 0V116"/>
-          <path class="signature-faint" d="M38 58C82 58 91 18 142 18H246C293 18 294 58 336 58"/>
-          <path id="signaturePath" class="signature-route" d="M38 58H89C111 58 111 98 142 98H246C286 98 286 58 336 58"/>
-          <path class="signature-route-secondary" d="M142 98V18M246 98V18"/>
-          <circle cx="38" cy="58" r="11" class="signature-node"/><circle cx="38" cy="58" r="3" class="signature-core"/>
-          <rect x="130" y="84" width="24" height="28" rx="5" class="signature-station"/><rect x="234" y="84" width="24" height="28" rx="5" class="signature-station"/>
-          <circle cx="336" cy="58" r="11" class="signature-node is-exit"/><circle cx="336" cy="58" r="3" class="signature-core"/>
-          <circle r="3.6" fill="#c6e8d7"><animateMotion dur="5s" repeatCount="indefinite" path="M38 58H89C111 58 111 98 142 98H246C286 98 286 58 336 58"/></circle>
-          <text x="30" y="86" class="signature-caption">IN</text><text x="320" y="86" class="signature-caption">OUT</text>
-          <text x="145" y="9" class="signature-caption">01</text><text x="249" y="9" class="signature-caption">02</text>
-        </svg>
-        <span class="graphic-caption"><span class="graphic-caption-line"></span> NETWORK STUDY / 001</span>
       </div>
     </section>
 
@@ -82,24 +66,23 @@
               <p class="advanced-note">Strict receiving reserves space at the start of each tick. Turnover allows immediate reuse of space vacated that tick.</p>
             </div>
           </details>
-          <button type="submit" class="optimize-button" id="optimize"><span class="button-icon">✳</span><span>Optimize topology</span><span class="button-arrow">↗</span></button>
+          <button type="submit" class="optimize-button" id="optimize"><span class="button-icon">✳</span><span>Recompute</span><span class="button-arrow">↗</span></button>
         </form>
-        <div class="control-foot"><span class="signal-dot"></span> Discrete model · Finite capacity<br><span class="control-foot-sub">All times expressed in model ticks.</span></div>
+        <div class="control-foot"><span class="signal-dot"></span> Updates when inputs change<br><span class="control-foot-sub">Time is measured in model ticks.</span></div>
       </aside>
 
       <div class="results-column">
         <section class="simulation-panel panel" aria-labelledby="stage-heading">
           <div class="stage-topline"><div class="stage-top-title"><span class="section-kicker">02 / DISCOVER</span><h2 id="stage-heading">The optimized flow</h2></div><span class="solution-badge"><span class="status-pill" id="solution-status"><span class="status-indicator"></span> READY</span><button type="button" class="info-trigger" aria-label="Explain solution status" data-definition="Proven optimal means the clearance time matches a mathematical lower bound for this model. Verified feasible means every movement is valid, but a global minimum is not established.">i</button></span></div>
+          <div class="viz-titleline"><div><span class="mini-label"><span class="term">QUEUE LANES<button type="button" class="info-trigger" aria-label="Explain QUEUE LANES" data-definition="A continuous-lane view of the finite-capacity approach cells. Each marked place corresponds to a person waiting in a pipeline; lateral junctions connect adjacent lanes.">i</button></span></span><strong id="topology-label">Split feeders</strong></div><div class="viz-legend"><button id="zoom" class="zoom-button" type="button" aria-pressed="false">Zoom +</button><span><i class="legend-dot moving"></i> People</span><span><i class="legend-dot process"></i> Service</span><span><i class="legend-line"></i> Pipeline</span></div></div>
+          <div class="network-frame" id="network-frame"><svg id="network-svg" role="img" aria-label="Animated queue network" viewBox="0 0 1040 480" preserveAspectRatio="xMidYMid meet"></svg><div class="network-overlay" id="network-overlay"><span class="network-overlay-label">MOVEMENT REPLAY</span><span id="network-phase">SYSTEM INITIALIZED</span></div></div>
+          <div class="playback-bar"><div class="transport-controls"><button id="restart" type="button" class="transport ghost" aria-label="Restart simulation" title="Restart"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M4.7 10A8 8 0 1 1 4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="previous" type="button" class="transport ghost" aria-label="Previous tick" title="Previous tick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5h2v14H5zm13 2v10l-9-5z"/></svg></button><button id="play" type="button" class="transport play-button" aria-label="Pause simulation"><svg id="play-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3v14H7zm7 0h3v14h-3z"/></svg></button><button id="next" type="button" class="transport ghost" aria-label="Next tick" title="Next tick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 5h2v14h-2zM6 7v10l9-5z"/></svg></button></div>
+            <div class="timeline"><div class="timeline-caption"><span><span class="term">SIMULATION TIMELINE<button type="button" class="info-trigger" aria-label="Explain SIMULATION TIMELINE" data-definition="Scrub or step through discrete model ticks. Each move occupies one tick.">i</button></span></span><strong id="tick-label">000 <span>/ 044</span></strong></div><input type="range" id="timeline-slider" min="0" max="44" value="0" step="0.01" aria-label="Simulation timeline"></div>
+            <button id="speed" class="speed-button" type="button" title="Playback speed" aria-label="Playback speed">1×</button></div>
           <div class="metrics-row">
             <div class="primary-metric"><div class="metric-label"><span class="term">TOTAL CLEARANCE TIME<button type="button" class="info-trigger" aria-label="Explain TOTAL CLEARANCE TIME" data-definition="The number of model ticks until the final person exits after service. Smaller is better.">i</button></span></div><div class="metric-main"><strong id="clearance">44</strong><span>TICKS</span></div><div class="metric-context" id="clearance-context">Minimum proven clearance</div></div>
             <div class="metric-subgrid"><div class="small-metric"><span><span class="term">PORTALS BUILT<button type="button" class="info-trigger" aria-label="Explain PORTALS BUILT" data-definition="Optional corridor connections that must be opened to create this approach layout. Fewer can mean a simpler design.">i</button></span></span><strong id="portals">6</strong></div><div class="small-metric"><span><span class="term">COUNTERS USED<button type="button" class="info-trigger" aria-label="Explain COUNTERS USED" data-definition="Number of available counters that actually serve at least one person.">i</button></span></span><strong id="used">4<span class="metric-divider">/5</span></strong></div></div>
           </div>
-          <div class="stage-divider"></div>
-          <div class="viz-titleline"><div><span class="mini-label"><span class="term">LIVE NETWORK<button type="button" class="info-trigger" aria-label="Explain LIVE NETWORK" data-definition="A tick-by-tick replay of a feasible route through finite-capacity cells and counters.">i</button></span></span><strong id="topology-label">Split feeders</strong></div><div class="viz-legend"><button id="zoom" class="zoom-button" type="button" aria-pressed="false">Zoom +</button><span><i class="legend-dot moving"></i> People</span><span><i class="legend-dot process"></i> Service</span><span><i class="legend-line"></i> Corridor</span></div></div>
-          <div class="network-frame" id="network-frame"><svg id="network-svg" role="img" aria-label="Animated queue network" viewBox="0 0 1040 480" preserveAspectRatio="xMidYMid meet"></svg><div class="network-overlay" id="network-overlay"><span class="network-overlay-label">NETWORK SIMULATION</span><span id="network-phase">SYSTEM INITIALIZED</span></div></div>
-          <div class="playback-bar"><div class="transport-controls"><button id="restart" type="button" class="transport ghost" aria-label="Restart simulation" title="Restart"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M4.7 10A8 8 0 1 1 4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="previous" type="button" class="transport ghost" aria-label="Previous tick" title="Previous tick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5h2v14H5zm13 2v10l-9-5z"/></svg></button><button id="play" type="button" class="transport play-button" aria-label="Pause simulation"><svg id="play-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3v14H7zm7 0h3v14h-3z"/></svg></button><button id="next" type="button" class="transport ghost" aria-label="Next tick" title="Next tick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 5h2v14h-2zM6 7v10l9-5z"/></svg></button></div>
-            <div class="timeline"><div class="timeline-caption"><span><span class="term">SIMULATION TIMELINE<button type="button" class="info-trigger" aria-label="Explain SIMULATION TIMELINE" data-definition="Scrub or step through discrete model ticks. Each move occupies one tick.">i</button></span></span><strong id="tick-label">000 <span>/ 044</span></strong></div><input type="range" id="timeline-slider" min="0" max="44" value="0" step="0.01" aria-label="Simulation timeline"></div>
-            <button id="speed" class="speed-button" type="button" title="Playback speed" aria-label="Playback speed">1×</button></div>
           <div class="live-stats"><div><span class="stat-caption"><span class="term">WAITING / IN TRANSIT<button type="button" class="info-trigger" aria-label="Explain WAITING / IN TRANSIT" data-definition="People who are still at the source or in approach cells, before service starts.">i</button></span></span><strong id="waiting">36</strong></div><div><span class="stat-caption">IN SERVICE</span><strong id="processing">0</strong></div><div><span class="stat-caption">REACHED THE EXIT</span><strong id="finished">0 <small>/ 36</small></strong></div><div class="live-progress"><div id="completion-bar"></div></div></div>
         </section>
 

@@ -5,7 +5,7 @@ const ns = (val, digits=0) => Number(val).toFixed(digits);
 const clamp = (n,a,b)=>Math.min(b,Math.max(a,n));
 const speedChoices=[0.5,1,2,4];
 let model,selected,position=0,playing=true,speedIndex=1,lastFrame=0,pulseEnd=0,toastTimer=0,receiving='strict';
-let times=Array(5).fill(4),zoomed=false;
+let times=Array(5).fill(4),zoomed=false,autoRunTimer=0;
 const attributions={dedicated:'Independent access',shared:'Single shared approach',dual:'Two distributed feeders'};
 const fmt=t=>String(Math.floor(t)).padStart(3,'0');
 
@@ -36,14 +36,15 @@ function readConfig(){
   setTimesForCount();const uniform=$('uniform').checked,p=clamp(+$('uniform-time').value||1,1,30);
   return normalizeConfig({N,m,times:uniform?Array(m).fill(p):times,KM: $('merge-storage').value,Q0:$('source-rate').value,receiving});
 }
-function run(initial=false){
+function run(initial=false,silent=false){
+  clearTimeout(autoRunTimer);
   const btn=$('optimize');btn.disabled=true;btn.querySelector('span:nth-child(2)').textContent='Computing layouts…';
   const cfg=readConfig();
   try{
     model=solveScenario(cfg);selected=model.best;position=0;playing=true;pulseEnd=0;
-    updateResults();if(!initial)toast(`Evaluated ${model.candidatesCount} feasible layouts`);
+    updateResults();if(!initial&&!silent)toast(`Evaluated ${model.candidatesCount} feasible layouts`);
   }catch(err){console.error(err);toast(`Model error: ${err.message}`)}
-  finally{btn.disabled=false;btn.querySelector('span:nth-child(2)').textContent='Optimize topology';btn.classList.remove('pending')}
+  finally{btn.disabled=false;btn.querySelector('span:nth-child(2)').textContent='Recompute';btn.classList.remove('pending')}
 }
 function showMetric(id,txt){$(id).textContent=txt}
 function updateResults(){
@@ -105,12 +106,37 @@ function coords(cfg){
 const path=(a,b)=>`M ${a[0]} ${a[1]} L ${b[0]} ${b[1]}`;
 const bez=(a,b,s=0.56)=>`M ${a[0]} ${a[1]} C ${a[0]+(b[0]-a[0])*s} ${a[1]} ${b[0]-(b[0]-a[0])*s} ${b[1]} ${b[0]} ${b[1]}`;
 const circle=(x,y,r,cls)=>`<circle cx="${x}" cy="${y}" r="${r}" class="${cls}"/>`;
-const posOffset=(id,node)=>{
-  if(node.startsWith('C'))return [50,-12];
-  if(node==='X0'||node==='X1')return [0,0];
-  const k=(id*17+3)%7;return [((k%3)-1)*8, (Math.floor(k/3)-1)*6];
-};
-function actorPosition(node,id,c){const p=c.point(node),o=posOffset(id,node);return [p[0]+o[0],p[1]+o[1]]}
+// People occupy explicit positions along a continuous queue lane. The underlying
+// two finite-capacity A/B approach cells are unchanged; the pipeline is their
+// visual representation, not a different scheduling or receiving model.
+function laneSlot(node,id,positions,c){
+  const type=node[0],j=+node.slice(1);
+  const neighbors=[];
+  positions.forEach((place,pid)=>{if(place===node)neighbors.push(pid)});
+  neighbors.sort((a,b)=>a-b);
+  const index=Math.max(0,neighbors.indexOf(id));
+  if(type==='A')return [index===0?294:255,c.at(j)];
+  if(type==='B')return [index===0?449:410,c.at(j)];
+  return c.point(node);
+}
+function actorPosition(node,id,c,positions){
+  if(node.startsWith('A')||node.startsWith('B'))return laneSlot(node,id,positions,c);
+  const p=c.point(node);
+  if(node.startsWith('C'))return [p[0]+50,p[1]-12];
+  return p;
+}
+function pipelineSegment(x1,x2,y,full,n){
+  // The four place markings are intentionally subtle; occupants are drawn
+  // from actual replay snapshots, not from independently animated decorations.
+  const seats=full?[255,294,410,449]:[410,449];
+  return `<g class="pipeline ${full?'':'pipeline-partial'}">
+    <rect x="${x1}" y="${y-17}" width="${x2-x1}" height="34" rx="17" class="pipe-shell"/>
+    <path d="M${x1+15} ${y-11}H${x2-15}" class="pipe-highlight"/>
+    <path d="M${x1+15} ${y+11}H${x2-15}" class="pipe-lowlight"/>
+    ${seats.map(x=>`<circle cx="${x}" cy="${y}" r="5.2" class="pipe-position"/>`).join('')}
+    <text x="${x2-12}" y="${y-24}" text-anchor="end" class="pipe-occupancy">${n} WAITING</text>
+  </g>`;
+}
 function paint(){
   if(!model||!selected)return;
   const cfg=model.config,lo=selected.layout,trace=selected.trace,H=trace.clearance;
@@ -125,41 +151,47 @@ function paint(){
   }
   const moving=new Map(events.map(e=>[e.id,e]));
   const rows=Array.from({length:cfg.m},(_,i)=>i),html=[];
-  html.push(`<defs><pattern id="dotGrid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".65" fill="#41645e" opacity=".55"/></pattern><pattern id="stationEtch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="#bad6c4" stroke-opacity=".15" stroke-width="1"/></pattern><linearGradient id="stationSurface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#263b40"/><stop offset="1" stop-color="#1a2c33"/></linearGradient></defs>`);
+  html.push(`<defs><pattern id="dotGrid" x="0" y="0" width="29" height="29" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".55" fill="#41645e" opacity=".22"/></pattern><linearGradient id="pipeSurface" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1d3035"/><stop offset=".51" stop-color="#16262d"/><stop offset="1" stop-color="#101e25"/></linearGradient><linearGradient id="stationSurface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#24343b"/><stop offset="1" stop-color="#1b292f"/></linearGradient></defs>`);
   html.push(`<rect width="1040" height="${c.height}" class="grid-backdrop"/>`);
-  html.push(`<path d="M18 62V18H62M978 18H1022V62M18 ${c.height-62}V${c.height-18}H62M978 ${c.height-18}H1022V${c.height-62}" class="schematic-corners"/>`);
-  html.push(`<path d="M16 55H1024M16 ${c.height-53}H1024" class="schematic-ruler"/>`);
-  for(let x=32;x<1024;x+=26)html.push(`<path d="M${x} 55v${x%104===32?8:4}" class="schematic-tick"/>`);
-  html.push(`<text x="83" y="37" class="axis-label" text-anchor="middle">01 · SOURCE</text><text x="330" y="37" class="axis-label" text-anchor="middle">02 · ROUTING</text><text x="569" y="37" class="axis-label" text-anchor="middle">03 · SERVICE</text><text x="748" y="37" class="axis-label" text-anchor="middle">04 · RELEASE</text><text x="984" y="37" class="axis-label" text-anchor="middle">05 · EXIT</text>`);
+  html.push(`<text x="83" y="38" class="axis-label" text-anchor="middle">SOURCE</text><text x="340" y="38" class="axis-label" text-anchor="middle">QUEUE PIPELINES</text><text x="569" y="38" class="axis-label" text-anchor="middle">COUNTERS</text><text x="866" y="38" class="axis-label" text-anchor="middle">EXIT FLOW</text>`);
   for(const j of rows){
     const y=at(j),pB=point(`B${j}`),pC=point(`C${j}`),pE=point(`E${j}`);
-    html.push(`<line x1="176" y1="${y}" x2="754" y2="${y}" class="empty-row-dash"/>`);
-    html.push(`<text x="166" y="${y+4}" class="row-number" text-anchor="end">${String(j+1).padStart(2,'0')}</text>`);
-    const hasEntry=lo.roots.includes(j),hasLane=lo.lanes.includes(j);
-    const pA=point(`A${j}`);
-    html.push(`<path d="${bez(point('X0'),pA)}" class="${hasEntry?'gate-active':'gate-inactive'}" ${hasEntry?'':'opacity=".2"'}/>`);
-    html.push(`<path d="${path(pA,pB)}" class="${hasLane?'gate-active':'gate-inactive'}" ${hasLane?'':'opacity=".32"'}/>`);
-    html.push(`<path d="${path(pB,pC)}" class="service-link"/>`);
+    const hasEntry=lo.roots.includes(j),hasLane=lo.lanes.includes(j),isActive=lo.active.includes(j);
+    const pA=point(`A${j}`),waiting=(occupancy[`A${j}`]||0)+(occupancy[`B${j}`]||0);
+    html.push(`<text x="183" y="${y+4}" class="row-number" text-anchor="end">${String(j+1).padStart(2,'0')}</text>`);
+    // Root lanes include A and B capacity places; feeder branches contain B.
+    if(hasEntry&&hasLane){
+      html.push(`<path d="${bez(point('X0'),[210,y])}" class="pipe-feeder"/>`);
+      html.push(pipelineSegment(206,504,y,true,waiting));
+    } else if(isActive){
+      html.push(pipelineSegment(367,504,y,false,waiting));
+    } else {
+      html.push(`<path d="M367 ${y}H503" class="unused-route"/>`);
+    }
+    if(isActive){
+      // The open right end of a lane feeds the service counter.
+      html.push(`<path d="M504 ${y}H${pC[0]-65}" class="pipe-feeder"/>`);
+    }
     html.push(`<path d="${path(pC,pE)}" class="service-link"/>`);
     html.push(`<path d="${bez(pE,point('M'))}" class="depart-link"/>`);
-    html.push(`<g><rect x="${pA[0]-18}" y="${y-17}" width="36" height="34" rx="8" class="node-shell ${occupancy[`A${j}`]===2?'full':''}" opacity="${hasEntry?1:.42}"/><title>Approach A${j+1}: ${occupancy[`A${j}`]||0}/2</title></g>`);
-    html.push(`<g><rect x="${pB[0]-18}" y="${y-17}" width="36" height="34" rx="8" class="node-shell ${occupancy[`B${j}`]===2?'full':''}" opacity="${lo.active.includes(j)?1:.65}"/><title>Approach B${j+1}: ${occupancy[`B${j}`]||0}/2</title></g>`);
     const busy=!!startsByCounter[j],age=busy?Math.max(0,startsByCounter[j].age):0,remaining=busy?Math.max(0,cfg.times[j]-age):0;
     const stationX=pC[0]-65,stationY=y-31;
-    html.push(`<g class="station-assembly"><rect x="${stationX}" y="${stationY}" width="130" height="62" rx="8" class="counter-node ${busy?'busy':'idle'}"/><rect x="${stationX+1}" y="${stationY+1}" width="6" height="60" rx="2" class="counter-rail ${busy?'on':''}"/><rect x="${stationX+12}" y="${stationY+8}" width="103" height="18" class="station-etch"/>`);
+    html.push(`<g class="station-assembly ${isActive?'':'station-unused'}"><rect x="${stationX}" y="${stationY}" width="130" height="62" rx="8" class="counter-node ${busy?'busy':'idle'}"/><rect x="${stationX+12}" y="${stationY+8}" width="103" height="18" class="station-etch"/>`);
     html.push(`<text x="${stationX+16}" y="${y-11}" class="station-serial">SERVICE / ${String(j+1).padStart(2,'0')}</text>`);
     html.push(`<text x="${stationX+16}" y="${y+7}" class="counter-title">COUNTER ${String(j+1).padStart(2,'0')}</text>`);
     html.push(`<text x="${stationX+16}" y="${y+23}" class="counter-time">${busy?`PROCESSING · ${Math.ceil(remaining)} LEFT`:`${cfg.times[j]} TICKS / PERSON`}</text>`);
     html.push(`<rect x="${stationX+16}" y="${stationY+54}" width="99" height="2" rx="1" class="station-track"/>`);
     if(busy){const progress=clamp(age/cfg.times[j],0,1);html.push(`<rect x="${stationX+16}" y="${stationY+54}" width="${(99*progress).toFixed(2)}" height="2" rx="1" class="station-progress"/>`)}
     html.push(`<circle cx="${stationX+114}" cy="${stationY+13}" r="3.2" class="station-light ${busy?'on':''}"/><title>Counter ${j+1}, ${cfg.times[j]} ticks per person${busy?`, ${remaining} ticks until service completion`:''}</title></g>`);
-    html.push(`<rect x="${pE[0]-17}" y="${y-16}" width="34" height="32" rx="7" class="node-shell"/><title>Departure E${j+1}: ${occupancy[`E${j}`]||0}/1</title>`);
+    // A departure cell still stores one person; it is shown as a slim gate.
+    html.push(`<rect x="${pE[0]-5}" y="${y-13}" width="10" height="26" rx="4" class="departure-gate"/><title>Departure storage ${j+1}: ${occupancy[`E${j}`]||0}/1</title>`);
   }
+  // Junctions between feeder pipelines represent the original B-to-B portals.
   for(let j=0;j<cfg.m-1;j++){
     const p1=point(`B${j}`),p2=point(`B${j+1}`),yes=lo.links.includes(`B${j}:${j+1}`);
-    html.push(`<path d="${path(p1,p2)}" class="${yes?'gate-active':'gate-inactive'}" opacity="${yes?'1':'.28'}"/>`);
+    if(yes)html.push(`<path d="M${p1[0]+22} ${p1[1]}V${p2[1]}" class="pipe-junction"/>`);
   }
-  html.push(`<path d="${path(point('M'),point('X1'))}" class="gate-active"/>`);
+  html.push(`<path d="${path(point('M'),point('X1'))}" class="pipe-feeder"/>`);
   const [sx,sy]=point('X0'),[mx,my]=point('M'),[ex,ey]=point('X1');
   html.push(`${circle(sx,sy,48,'source-beacon')}${circle(sx,sy,41,'central-node')}${circle(sx,sy,35,'node-inner-ring')}${circle(mx,my,32,'central-node')}${circle(mx,my,26,'node-inner-ring')}${circle(ex,ey,41,'central-node out')}${circle(ex,ey,35,'node-inner-ring')}`);
   const seenExit=positions.filter(x=>x==='X1').length,inside=cfg.N-(occupancy.X0||0)-seenExit;
@@ -167,14 +199,10 @@ function paint(){
   html.push(`<text x="${mx}" y="${my-2}" class="central-count" style="font-size:17px">${occupancy.M||0}</text><text x="${mx}" y="${my+12}" class="central-title" style="font-size:9px">MERGE</text>`);
   html.push(`<text x="${ex}" y="${ey-7}" class="central-count">${seenExit}</text><text x="${ex}" y="${ey+11}" class="central-title">OUT</text>`);
   if(inside>0)html.push(`<text x="${520}" y="${c.height-35}" class="axis-decoration" text-anchor="middle">${inside} PEOPLE INSIDE THE NETWORK</text>`);
-  for(const ev of events){
-    const a=point(ev.from),b=point(ev.to),d=ev.from==='X0'||ev.to==='M'?bez(a,b):path(a,b);
-    html.push(`<path d="${d}" class="gate-flow" opacity="${(1-frac)*.38+.19}"/>`);
-  }
   const drawPeople=[];
   for(let id=0;id<cfg.N;id++){
     const where=positions[id];if(where==='X0'||where==='X1')continue;
-    const ev=moving.get(id),a=actorPosition(where,id,c),b=ev?actorPosition(ev.to,id,c):a;
+    const ev=moving.get(id),a=actorPosition(where,id,c,positions),b=ev?actorPosition(ev.to,id,c,positions):a;
     const ease=frac*frac*(3-2*frac),x=a[0]+(b[0]-a[0])*ease,y=a[1]+(b[1]-a[1])*ease;
     const kind=where.startsWith('C')?'agent-in-service':'agent-dot';
     drawPeople.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${kind==='agent-in-service'?5:5.6}" class="${kind}"><title>Person ${id+1} · ${ev?ev.from+' → '+ev.to:where}</title></circle>`);
@@ -214,7 +242,12 @@ function exportData(){
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`queue-lab-N${model.config.N}-m${model.config.m}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Verified movement trace exported');
 }
-function markPending(){if(model)$('optimize').classList.add('pending')}
+function markPending(){
+  if(!model)return;
+  $('optimize').classList.add('pending');
+  clearTimeout(autoRunTimer);
+  autoRunTimer=setTimeout(()=>run(false,true),420);
+}
 function attachControls(){
   $('settings').addEventListener('submit',e=>{e.preventDefault();run()});
   document.querySelectorAll('[data-step]').forEach(b=>b.addEventListener('click',()=>{

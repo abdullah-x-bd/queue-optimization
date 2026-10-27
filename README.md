@@ -57,3 +57,8 @@ The 27 October 2026 research note, *Finite-space queue topology synthesis: Spars
 - [Complete original reproducibility archive](research/reproducibility_source.zip)
 
 **Terminology:** A *tick* is one discrete time unit. A *portal* is an optional constructed approach connection; mandatory service and departure links do not contribute to the portal count. *Proven optimal* refers to clearance time under the published mathematical assumptions, while *verified feasible* refers to event-by-event validation without a corresponding global optimality certificate.
+
+
+### Queue-lane view
+
+The network visual presents approach storage as continuous pipelines, with explicit positions representing the model's finite-capacity `A` and `B` cells. Movement and counter releases are driven directly by the replayed discrete schedule. Scenario changes refresh the result automatically, while the manual recompute control remains available. The mathematical assumptions are unchanged; see [model documentation](docs/MODEL.md).

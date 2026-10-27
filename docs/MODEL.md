@@ -54,3 +54,9 @@ The model deliberately separates mathematically specified limits from real-world
 ## Reproducing the research
 
 The original archive retains the complete scientific result package. Unpack `research/reproducibility_source.zip`, install its requirements, and run `python reproduce.py --verify-only`. The independent verifier checks stored feasible traces; numerical MILP infeasibility results do not carry independently verified rational proof certificates. Consult the original PDF and LaTeX sources for the complete theorem statements and experimental protocols.
+
+## Continuous-lane rendering
+
+The animation depicts a row’s finite approach cells as a single continuous queue pipeline. A root lane includes the two-place `A` buffer and the two-place `B` buffer, shown with four subtle queuing positions. A branch reached through an adjacent lateral `B` portal shows its two `B` buffer positions. Tokens in these positions correspond to the integer replay’s actual occupant IDs and positions at each tick, with motion interpolated between replay events solely for presentation. Junctions between the lanes visualize the installed lateral `B` portals. The source, counter service, one-place departure buffer, common merge, and exit retain their original mechanics.
+
+The pipeline drawing is a visualization of the discrete finite-cell model, not a continuous-space queue simulation or a physical area-scale layout. It does not alter time-optimality, capacity, or receiving-rule claims.
