@@ -40,3 +40,29 @@ test('input normalization and theoretical formula',()=>{
   assert.equal(normalizeConfig({N:0,m:30,times:[-4]}).N,1);
   assert.equal(normalizeConfig({N:0,m:30}).m,12);
 });
+
+
+test('increasing available uniform counters preserves a smaller optimal topology',()=>{
+  // The exit moves one person per tick under turnover receiving.
+  // Once four p=4 counters saturate it, the selectable layout should not
+  // become slower or require more portals when a fifth or sixth is available.
+  const outcomes=[];
+  for(const m of [4,5,6,7]){
+    const cfg=normalizeConfig({N:180,m,p:4,KM:2,Q0:2,receiving:'turnover'});
+    const {best,status}=solveScenario(cfg);
+    assert.equal(status,'proven');
+    assert.equal(best.trace.clearance,188);
+    assert.equal(best.trace.served.filter(Boolean).length,4);
+    assert.equal(best.layout.portals,6);
+    assert.equal(replayTrace(cfg,best.layout,best.trace.events).clearance,188);
+    outcomes.push({roots:best.layout.roots,active:best.layout.active,links:best.layout.links});
+  }
+  for(const layout of outcomes.slice(1))assert.deepEqual(layout,outcomes[0]);
+});
+
+test('extra counters can matter before service throughput reaches the exit rate',()=>{
+  const three=solveScenario({N:180,m:3,p:4,KM:2,Q0:2,receiving:'turnover'});
+  const four=solveScenario({N:180,m:4,p:4,KM:2,Q0:2,receiving:'turnover'});
+  assert.equal(three.best.trace.clearance,247);
+  assert.equal(four.best.trace.clearance,188);
+});

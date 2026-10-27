@@ -302,9 +302,21 @@ function genericCandidates(cfg){
   }
   for(let r=0;r<cfg.m;r++)options.push(shared(cfg,all,r));
   for(let a=0;a<cfg.m-1;a++)options.push(dual(cfg,all,[a,a+1]));
+  // Preserve a canonical subnetwork for each usable number of counters.
+  // New available counters never erase a previously considered layout.
+  // Centrally rooted chains are representative constructions; the model does
+  // not claim exhaustive portal minimization outside proved regimes.
+  const bound=uniformBound(cfg);
+  if(bound){
+    for(let k=bound.minCounters;k<cfg.m;k++){
+      const subset=all.slice(0,k);
+      options.push(shared(cfg,subset,Math.floor((k-1)/2)));
+      if(k>=2){const left=Math.floor((k-2)/2);options.push(dual(cfg,subset,[left,left+1]));}
+    }
+  }
   return [...new Map(options.map(o=>[`${o.roots.join(',')}|${o.lanes.join(',')}|${o.links.join(',')}`,o])).values()];
 }
-function rank(a,b){return a.trace.clearance-b.trace.clearance || a.layout.portals-b.layout.portals || a.trace.avgWait-b.trace.avgWait}
+function rank(a,b){return a.trace.clearance-b.trace.clearance || a.layout.portals-b.layout.portals || a.trace.served.filter(Boolean).length-b.trace.served.filter(Boolean).length || a.trace.avgWait-b.trace.avgWait}
 const shortCaption = r => r?.kind==='proven' ? 'Exact clearance theorem' : 'Best verified schedule found';
 
 export function solveScenario(input){
@@ -325,7 +337,7 @@ export function solveScenario(input){
   candidates.sort(rank);
   if(!candidates.length)throw Error('No feasible schedule could be constructed for these settings');
   let best=candidates[0];
-  if(bound){const matched=candidates.filter(x=>x.trace.clearance===bound.clearance);if(matched.length)best=matched.sort((a,b)=>a.layout.portals-b.layout.portals || (a.kind==='proven'?-1:1))[0]}
+  if(bound){const matched=candidates.filter(x=>x.trace.clearance===bound.clearance);if(matched.length)best=matched.sort(rank)[0]}
   const byFamily={};
   for(const candidate of candidates){let f=candidate.layout.family;if(!byFamily[f]||rank(candidate,byFamily[f])<0)byFamily[f]=candidate}
   const comparisons=[best];

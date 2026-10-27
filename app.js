@@ -52,7 +52,13 @@ function updateResults(){
   const cfg=model.config,trace=selected.trace,cert=model.theoretical&&trace.clearance===model.theoretical.clearance;
   showMetric('clearance',trace.clearance);showMetric('portals',selected.layout.portals);
   $('used').innerHTML=`${trace.served.filter(Boolean).length}<span class="metric-divider">/${cfg.m}</span>`;
-  $('clearance-context').textContent=cert? 'Mathematically proven minimum for this row model' : 'Shortest verified schedule found across tested layouts';
+  const bound=model.theoretical;
+  const exitLimited=Boolean(bound && bound.clearance===cfg.times[0]+5+bound.delta*(cfg.N-1) && bound.minCounters<cfg.m);
+  $('clearance-context').textContent=cert
+    ? exitLimited
+      ? `Exit-limited · ${bound.minCounters} counters suffice; additional counters cannot shorten clearance`
+      : 'Mathematically proven minimum for this row model'
+    : 'Shortest verified schedule found across tested layouts';
   const pill=$('solution-status');pill.classList.toggle('feasible',!cert);pill.innerHTML=`<span class="status-indicator"></span> ${cert?'PROVEN OPTIMAL':'VERIFIED FEASIBLE'}`;
   $('topology-label').textContent=selected.layout.label;
   $('timeline-slider').max=trace.clearance;drawSlider($('timeline-slider'));

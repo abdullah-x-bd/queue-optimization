@@ -11,7 +11,7 @@ The website combines network synthesis, deterministic finite-capacity simulation
 - Populations of 1 to 180 people and up to 12 available counters.
 - Uniform service time or independent processing durations per counter.
 - Adjustable source admission throughput, merge storage, and receiving convention.
-- Automatic selection among dedicated access, shared feeders, and split feeder layouts.
+- Selection among dedicated access, shared feeders, and split feeder layouts, including reduced-counter sublayouts when the exit is already saturated.
 - Movement-by-movement SVG animation, playback, stepping, speed control, and a scrubbable timeline.
 - Comparisons of clearance time and constructed approach portals across alternative layouts.
 - Shareable scenarios and exported, independently verified event traces.
@@ -22,7 +22,7 @@ The simulator runs directly in the browser. No framework build, user account, ex
 
 For **uniform service durations** in the research row family, the clearance optimum is established by a closed-form theorem, and the website uses a constructive feasible schedule attaining it. Selected sparse constructions also have proven minimum portal counts. The playback engine independently checks the movement, service, capacity, and blocking constraints before accepting each schedule.
 
-For **heterogeneous durations**, the standalone browser edition searches a collection of row topologies and dispatch policies. The fastest result found is displayed as a *verified feasible schedule*, **not a proof of global optimality**. The original research package includes a separate Python mixed-integer optimizer for exact optimization over supplied finite candidate graphs. That solver is available in [research/source/synthesis.py](research/source/synthesis.py) and in the archived [reproducibility package](research/reproducibility_source.zip).
+For **heterogeneous durations**, the standalone browser edition searches a collection of row topologies and dispatch policies. The fastest result found is displayed as a *verified feasible schedule*, **not a proof of global optimality**. Among equal-clearance candidate solutions, the browser prefers fewer approach portals and then fewer counters used. Outside the explicitly proved sparsity regimes, this comparison does not certify a global minimum portal count. The original research package includes a separate Python mixed-integer optimizer for exact optimization over supplied finite candidate graphs. That solver is available in [research/source/synthesis.py](research/source/synthesis.py) and in the archived [reproducibility package](research/reproducibility_source.zip).
 
 All results refer to the explicit discrete model and its chosen design space, not to unrestricted continuous architectural layouts or calibrated real-world pedestrian speeds.
 
