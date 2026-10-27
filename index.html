@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1018">
+  <meta name="description" content="Queue Topology Lab explores faster, leaner finite-space service networks. Configure a system, synthesize its layout and watch the movement. ">
+  <meta property="og:title" content="Queue Topology Lab | Design the way through">
+  <meta property="og:description" content="An interactive finite-space queue network simulator with verified movement and topology synthesis.">
+  <title>Queue Topology Lab | Design the way through</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="atmosphere atmosphere-a"></div><div class="atmosphere atmosphere-b"></div>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Queue Topology Lab home">
+        <span class="brand-symbol" aria-hidden="true">
+          <svg width="31" height="31" viewBox="0 0 31 31" fill="none"><path d="M4 7H14C19 7 19 15.5 24.5 15.5H27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M4 15.5H12.5C17.5 15.5 17.5 24 23 24H27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="4" cy="7" r="2.5" fill="currentColor"/><circle cx="4" cy="15.5" r="2.5" fill="currentColor"/><circle cx="27" cy="15.5" r="2.5" fill="currentColor"/><circle cx="27" cy="24" r="2.5" fill="currentColor"/></svg>
+        </span>
+        <span class="brand-text">QUEUE<span class="brand-separator">/</span>LAB<span class="brand-subtext">TOPOLOGY STUDIO</span></span>
+      </a>
+      <div class="header-meta"><span class="header-live"><span class="live-orb"></span> FINITE-SPACE OPTIMIZATION</span><span class="header-version">V 1.0</span></div>
+      <nav class="header-actions" aria-label="External resources">
+        <a href="https://github.com/abdullah-x-bd/queue-optimization/blob/main/docs/queue_topology_research_extensions.pdf" target="_blank" rel="noopener">Research paper <span aria-hidden="true">↗</span></a>
+        <a class="header-git" href="https://github.com/abdullah-x-bd/queue-optimization" target="_blank" rel="noopener" aria-label="GitHub repository"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .8a11.2 11.2 0 0 0-3.54 21.82c.56.1.77-.24.77-.54v-2.1c-3.15.69-3.81-1.34-3.81-1.34-.52-1.32-1.27-1.67-1.27-1.67-1.03-.7.08-.68.08-.68 1.14.08 1.74 1.17 1.74 1.17 1 .1.1 2.62 1.54 3.26 1.18.16-.9.4-1.55.73-1.9-2.51-.29-5.15-1.26-5.15-5.59 0-1.24.44-2.25 1.17-3.04-.12-.28-.5-1.44.11-3 0 0 .96-.31 3.08 1.16A10.7 10.7 0 0 1 12 6.2c.96.01 1.93.13 2.83.38 2.12-1.47 3.07-1.16 3.07-1.16.62 1.56.23 2.72.12 3 .73.79 1.16 1.8 1.16 3.04 0 4.34-2.64 5.3-5.17 5.58.4.35.76 1.02.76 2.07v3.06c0 .3.2.65.78.54A11.2 11.2 0 0 0 12 .8Z"/></svg></a>
+      </nav>
+    </header>
+
+    <section class="intro" aria-labelledby="page-title">
+      <div><div class="eyebrow"><span class="eyebrow-line"></span> THE SCIENCE OF MOVEMENT <span class="eyebrow-index">/ 001</span></div>
+        <h1 id="page-title">Design the <span>way through.</span></h1>
+        <p>A finite-space queue network, designed for speed. Set the parameters, discover a layout, and watch every person move.</p>
+      </div>
+      <div class="intro-aside" aria-hidden="true"><div class="abstract-mark"><i></i><i></i><i></i><i></i></div><span>MODEL → MOVEMENT</span></div>
+    </section>
+
+    <main class="workspace">
+      <aside class="control-panel panel" aria-labelledby="setup-title">
+        <div class="panel-heading"><div><span class="section-kicker">01 / CONFIGURE</span><h2 id="setup-title">Your scenario</h2></div><span class="section-icon">◈</span></div>
+        <form id="settings" autocomplete="off">
+          <div class="field-group"><div class="field-label"><label for="population">People to move</label><span>01</span></div>
+            <div class="number-stepper"><button type="button" data-step="population:-1" aria-label="Fewer people">−</button><input id="population" name="population" type="number" min="1" max="180" value="36" inputmode="numeric"><button type="button" data-step="population:1" aria-label="More people">+</button></div>
+            <input class="range-slider" id="population-range" type="range" min="1" max="180" value="36" aria-label="Population slider">
+            <div class="range-endpoints"><span>1 PERSON</span><span>180 PEOPLE</span></div>
+          </div>
+          <div class="field-group counter-group"><div class="field-label"><label for="counters">Service counters</label><span>02</span></div>
+            <div class="number-stepper"><button type="button" data-step="counters:-1" aria-label="Fewer counters">−</button><input id="counters" name="counters" type="number" min="1" max="12" value="5" inputmode="numeric"><button type="button" data-step="counters:1" aria-label="More counters">+</button></div>
+            <div class="field-hint">Up to 12 available counters</div>
+          </div>
+          <div class="field-group service-group"><div class="field-label"><label>Service duration</label><span>03</span></div>
+            <div class="service-switch-row"><span>Same for every counter</span><label class="toggle" aria-label="Use a common service time"><input id="uniform" type="checkbox" checked><span class="toggle-track"></span></label></div>
+            <div id="uniform-panel" class="single-duration"><input id="uniform-time" type="range" min="1" max="30" value="4" aria-label="Common service duration"><div class="duration-total"><strong id="uniform-value">4</strong><span>TICKS / PERSON</span></div></div>
+            <div id="individual-panel" class="individual-durations" hidden></div>
+          </div>
+          <details class="advanced" id="advanced"><summary><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="#101720"/><circle cx="16" cy="17" r="3" fill="#101720"/></svg> Advanced settings</span><span class="expand-indicator">+</span></summary>
+            <div class="advanced-body">
+              <label class="advanced-line" for="source-rate"><span>Admission / tick <small>Source throughput</small></span><input id="source-rate" type="number" min="1" max="12" value="2"></label>
+              <label class="advanced-line" for="merge-storage"><span>Merge storage <small>Available places</small></span><input id="merge-storage" type="number" min="1" max="6" value="2"></label>
+              <div class="advanced-label">Receiving rule</div>
+              <div class="segmented" role="group" aria-label="Receiving convention"><button type="button" class="selected" data-receiving="strict" aria-pressed="true">Strict</button><button type="button" data-receiving="turnover" aria-pressed="false">Turnover</button></div>
+              <p class="advanced-note">Strict receiving reserves space at the start of each tick. Turnover allows immediate reuse of space vacated that tick.</p>
+            </div>
+          </details>
+          <button type="submit" class="optimize-button" id="optimize"><span class="button-icon">✳</span><span>Optimize topology</span><span class="button-arrow">↗</span></button>
+        </form>
+        <div class="control-foot"><span class="signal-dot"></span> Discrete model · Finite capacity<br><span class="control-foot-sub">All times expressed in model ticks.</span></div>
+      </aside>
+
+      <div class="results-column">
+        <section class="simulation-panel panel" aria-labelledby="stage-heading">
+          <div class="stage-topline"><div class="stage-top-title"><span class="section-kicker">02 / DISCOVER</span><h2 id="stage-heading">The optimized flow</h2></div><span class="status-pill" id="solution-status"><span class="status-indicator"></span> READY</span></div>
+          <div class="metrics-row">
+            <div class="primary-metric"><div class="metric-label">TOTAL CLEARANCE TIME</div><div class="metric-main"><strong id="clearance">44</strong><span>TICKS</span></div><div class="metric-context" id="clearance-context">Minimum proven clearance</div></div>
+            <div class="metric-subgrid"><div class="small-metric"><span>PORTALS BUILT</span><strong id="portals">6</strong></div><div class="small-metric"><span>COUNTERS USED</span><strong id="used">4<span class="metric-divider">/5</span></strong></div></div>
+          </div>
+          <div class="stage-divider"></div>
+          <div class="viz-titleline"><div><span class="mini-label">LIVE NETWORK</span><strong id="topology-label">Split feeders</strong></div><div class="viz-legend"><button id="zoom" class="zoom-button" type="button" aria-pressed="false">Zoom +</button><span><i class="legend-dot moving"></i> People</span><span><i class="legend-dot process"></i> Service</span><span><i class="legend-line"></i> Corridor</span></div></div>
+          <div class="network-frame" id="network-frame"><svg id="network-svg" role="img" aria-label="Animated queue network" viewBox="0 0 1040 480" preserveAspectRatio="xMidYMid meet"></svg><div class="network-overlay" id="network-overlay"><span class="network-overlay-label">NETWORK SIMULATION</span><span id="network-phase">SYSTEM INITIALIZED</span></div></div>
+          <div class="playback-bar"><div class="transport-controls"><button id="restart" type="button" class="transport ghost" aria-label="Restart simulation" title="Restart"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M4.7 10A8 8 0 1 1 4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="previous" type="button" class="transport ghost" aria-label="Previous tick" title="Previous tick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5h2v14H5zm13 2v10l-9-5z"/></svg></button><button id="play" type="button" class="transport play-button" aria-label="Pause simulation"><svg id="play-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3v14H7zm7 0h3v14h-3z"/></svg></button><button id="next" type="button" class="transport ghost" aria-label="Next tick" title="Next tick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 5h2v14h-2zM6 7v10l9-5z"/></svg></button></div>
+            <div class="timeline"><div class="timeline-caption"><span>SIMULATION TIMELINE</span><strong id="tick-label">000 <span>/ 044</span></strong></div><input type="range" id="timeline-slider" min="0" max="44" value="0" step="0.01" aria-label="Simulation timeline"></div>
+            <button id="speed" class="speed-button" type="button" title="Playback speed" aria-label="Playback speed">1×</button></div>
+          <div class="live-stats"><div><span class="stat-caption">WAITING / IN TRANSIT</span><strong id="waiting">36</strong></div><div><span class="stat-caption">IN SERVICE</span><strong id="processing">0</strong></div><div><span class="stat-caption">REACHED THE EXIT</span><strong id="finished">0 <small>/ 36</small></strong></div><div class="live-progress"><div id="completion-bar"></div></div></div>
+        </section>
+
+        <section class="comparison-panel panel" aria-labelledby="comparison-title"><div class="compare-header"><div><span class="section-kicker">03 / COMPARE</span><h2 id="comparison-title">Different paths. Different outcomes.</h2></div><div class="compare-header-actions"><button id="share" type="button" class="text-action" title="Copy a link to these inputs">↗ Share</button><button id="export" type="button" class="text-action" title="Download replay data">↓ Export data</button></div></div>
+          <p class="compare-description">Select a configuration to replay it under the same movement and storage rules.</p>
+          <div id="comparison-list" class="comparison-list"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer"><span>QUEUE / LAB <span class="footer-muted">© 2026</span></span><span>FINITE-SPACE QUEUE TOPOLOGY SYNTHESIS</span><a href="https://github.com/abdullah-x-bd/queue-optimization/tree/main/research/source" target="_blank" rel="noopener">Explore the mathematical model ↗</a></footer>
+  </div>
+  <div id="toast" role="status" aria-live="polite" class="toast"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
