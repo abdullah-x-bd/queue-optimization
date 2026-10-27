@@ -58,6 +58,20 @@ function updateResults(){
   $('finished').innerHTML=`0 <small>/ ${cfg.N}</small>`;
   renderComparison();paint();
 }
+function comparisonGlyph(layout,m){
+  const y=j=>7+38*(m===1?.5:j/(m-1));
+  let shapes=`<path d="M7 26H18M93 26H108" class="mini-rail"/><circle cx="7" cy="26" r="3.3" class="mini-terminal"/><circle cx="108" cy="26" r="3.3" class="mini-terminal"/>`;
+  const active=new Set(layout.active),roots=new Set(layout.roots),lanes=new Set(layout.lanes);
+  for(let j=0;j<m;j++){
+    const cy=y(j),opacity=active.has(j)?1:.15;
+    if(roots.has(j))shapes+=`<path d="M7 26 Q17 26 23 ${cy}" class="mini-rail"/>`;
+    if(lanes.has(j))shapes+=`<path d="M23 ${cy}H43" class="mini-rail"/>`;
+    if(active.has(j))shapes+=`<path d="M43 ${cy}H69M82 ${cy}Q93 ${cy} 108 26" class="mini-rail"/>`;
+    shapes+=`<rect x="${active.has(j)?69:72}" y="${cy-3.1}" width="${active.has(j)?13:7}" height="6.2" rx="1.5" class="mini-station" opacity="${opacity}"/>`;
+  }
+  for(let j=0;j<m-1;j++)if(layout.links.includes(`B${j}:${j+1}`))shapes+=`<path d="M43 ${y(j)}V${y(j+1)}" class="mini-rail"/>`;
+  return `<svg viewBox="0 0 115 52" class="comparison-mini" role="img" aria-label="Miniature network layout">${shapes}</svg>`;
+}
 function renderComparison(){
   if(!model)return;
   const min=Math.min(...model.comparisons.map(x=>x.trace.clearance)),max=Math.max(...model.comparisons.map(x=>x.trace.clearance));
@@ -68,6 +82,7 @@ function renderComparison(){
     const compare=x.trace.clearance-min;
     return `<button type="button" class="comparison-item ${active?'current':''}" data-comparison="${i}" aria-pressed="${active}" title="Replay ${x.layout.label}">
       <span class="comparison-label">${tag}<span class="compare-status"></span></span>
+      ${comparisonGlyph(x.layout,model.config.m)}
       <h3>${x.layout.label}</h3>
       <div class="comparison-number">${x.trace.clearance}<span>TICKS</span></div>
       <div class="bar-track"><div style="width:${width.toFixed(1)}%"></div></div>
@@ -83,15 +98,15 @@ function coords(cfg){
   const step=cfg.m<=4?99:cfg.m<=7?84:71,top=111,height=top*2+(cfg.m-1)*step;
   const at=j=>top+j*step,mid=(at(0)+at(cfg.m-1))/2;
   return {height,mid,at,point:(s)=>{
-    if(s==='X0')return [91,mid];if(s==='X1')return [958,mid];if(s==='M')return [840,mid];
-    const j=+s.slice(1);return [{A:252,B:404,C:550,E:678}[s[0]]??550,at(j)];
+    if(s==='X0')return [83,mid];if(s==='X1')return [984,mid];if(s==='M')return [869,mid];
+    const j=+s.slice(1);return [{A:252,B:405,C:569,E:748}[s[0]]??569,at(j)];
   }};
 }
 const path=(a,b)=>`M ${a[0]} ${a[1]} L ${b[0]} ${b[1]}`;
 const bez=(a,b,s=0.56)=>`M ${a[0]} ${a[1]} C ${a[0]+(b[0]-a[0])*s} ${a[1]} ${b[0]-(b[0]-a[0])*s} ${b[1]} ${b[0]} ${b[1]}`;
 const circle=(x,y,r,cls)=>`<circle cx="${x}" cy="${y}" r="${r}" class="${cls}"/>`;
 const posOffset=(id,node)=>{
-  if(node.startsWith('C'))return [0,0];
+  if(node.startsWith('C'))return [50,-12];
   if(node==='X0'||node==='X1')return [0,0];
   const k=(id*17+3)%7;return [((k%3)-1)*8, (Math.floor(k/3)-1)*6];
 };
@@ -110,9 +125,12 @@ function paint(){
   }
   const moving=new Map(events.map(e=>[e.id,e]));
   const rows=Array.from({length:cfg.m},(_,i)=>i),html=[];
-  html.push(`<defs><pattern id="dotGrid" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".75" fill="#29444e" opacity=".72"/></pattern><filter id="subtleGlow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`);
+  html.push(`<defs><pattern id="dotGrid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".65" fill="#41645e" opacity=".55"/></pattern><pattern id="stationEtch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="#bad6c4" stroke-opacity=".15" stroke-width="1"/></pattern><linearGradient id="stationSurface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#263b40"/><stop offset="1" stop-color="#1a2c33"/></linearGradient></defs>`);
   html.push(`<rect width="1040" height="${c.height}" class="grid-backdrop"/>`);
-  html.push(`<text x="91" y="36" class="axis-label" text-anchor="middle">SOURCE</text><text x="327" y="36" class="axis-label" text-anchor="middle">APPROACH</text><text x="550" y="36" class="axis-label" text-anchor="middle">SERVICE</text><text x="742" y="36" class="axis-label" text-anchor="middle">DEPARTURE</text><text x="958" y="36" class="axis-label" text-anchor="middle">EXIT</text>`);
+  html.push(`<path d="M18 62V18H62M978 18H1022V62M18 ${c.height-62}V${c.height-18}H62M978 ${c.height-18}H1022V${c.height-62}" class="schematic-corners"/>`);
+  html.push(`<path d="M16 55H1024M16 ${c.height-53}H1024" class="schematic-ruler"/>`);
+  for(let x=32;x<1024;x+=26)html.push(`<path d="M${x} 55v${x%104===32?8:4}" class="schematic-tick"/>`);
+  html.push(`<text x="83" y="37" class="axis-label" text-anchor="middle">01 · SOURCE</text><text x="330" y="37" class="axis-label" text-anchor="middle">02 · ROUTING</text><text x="569" y="37" class="axis-label" text-anchor="middle">03 · SERVICE</text><text x="748" y="37" class="axis-label" text-anchor="middle">04 · RELEASE</text><text x="984" y="37" class="axis-label" text-anchor="middle">05 · EXIT</text>`);
   for(const j of rows){
     const y=at(j),pB=point(`B${j}`),pC=point(`C${j}`),pE=point(`E${j}`);
     html.push(`<line x1="176" y1="${y}" x2="754" y2="${y}" class="empty-row-dash"/>`);
@@ -127,9 +145,14 @@ function paint(){
     html.push(`<g><rect x="${pA[0]-18}" y="${y-17}" width="36" height="34" rx="8" class="node-shell ${occupancy[`A${j}`]===2?'full':''}" opacity="${hasEntry?1:.42}"/><title>Approach A${j+1}: ${occupancy[`A${j}`]||0}/2</title></g>`);
     html.push(`<g><rect x="${pB[0]-18}" y="${y-17}" width="36" height="34" rx="8" class="node-shell ${occupancy[`B${j}`]===2?'full':''}" opacity="${lo.active.includes(j)?1:.65}"/><title>Approach B${j+1}: ${occupancy[`B${j}`]||0}/2</title></g>`);
     const busy=!!startsByCounter[j],age=busy?Math.max(0,startsByCounter[j].age):0,remaining=busy?Math.max(0,cfg.times[j]-age):0;
-    html.push(`<rect x="${pC[0]-42}" y="${y-26}" width="84" height="52" rx="12" class="counter-node ${busy?'busy':'idle'}"/><title>Counter ${j+1}; ${cfg.times[j]} ticks per person${busy?'; '+remaining+' ticks left':''}</title>`);
-    html.push(`<text x="${pC[0]}" y="${y-5}" class="counter-title">COUNTER ${j+1}</text><text x="${pC[0]}" y="${y+12}" class="counter-time">${busy?`IN SERVICE · ${Math.ceil(remaining)}`:`${cfg.times[j]} TICKS`}</text>`);
-    if(busy){const r=32,circ=2*Math.PI*r,progress=clamp(age/cfg.times[j],0,1);html.push(`<circle cx="${pC[0]}" cy="${y}" r="${r}" class="progress-ring" stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${(circ*(1-progress)).toFixed(2)}" transform="rotate(-90 ${pC[0]} ${y})" opacity=".6"/>`)}
+    const stationX=pC[0]-65,stationY=y-31;
+    html.push(`<g class="station-assembly"><rect x="${stationX}" y="${stationY}" width="130" height="62" rx="8" class="counter-node ${busy?'busy':'idle'}"/><rect x="${stationX+1}" y="${stationY+1}" width="6" height="60" rx="2" class="counter-rail ${busy?'on':''}"/><rect x="${stationX+12}" y="${stationY+8}" width="103" height="18" class="station-etch"/>`);
+    html.push(`<text x="${stationX+16}" y="${y-11}" class="station-serial">SERVICE / ${String(j+1).padStart(2,'0')}</text>`);
+    html.push(`<text x="${stationX+16}" y="${y+7}" class="counter-title">COUNTER ${String(j+1).padStart(2,'0')}</text>`);
+    html.push(`<text x="${stationX+16}" y="${y+23}" class="counter-time">${busy?`PROCESSING · ${Math.ceil(remaining)} LEFT`:`${cfg.times[j]} TICKS / PERSON`}</text>`);
+    html.push(`<rect x="${stationX+16}" y="${stationY+54}" width="99" height="2" rx="1" class="station-track"/>`);
+    if(busy){const progress=clamp(age/cfg.times[j],0,1);html.push(`<rect x="${stationX+16}" y="${stationY+54}" width="${(99*progress).toFixed(2)}" height="2" rx="1" class="station-progress"/>`)}
+    html.push(`<circle cx="${stationX+114}" cy="${stationY+13}" r="3.2" class="station-light ${busy?'on':''}"/><title>Counter ${j+1}, ${cfg.times[j]} ticks per person${busy?`, ${remaining} ticks until service completion`:''}</title></g>`);
     html.push(`<rect x="${pE[0]-17}" y="${y-16}" width="34" height="32" rx="7" class="node-shell"/><title>Departure E${j+1}: ${occupancy[`E${j}`]||0}/1</title>`);
   }
   for(let j=0;j<cfg.m-1;j++){
@@ -138,7 +161,7 @@ function paint(){
   }
   html.push(`<path d="${path(point('M'),point('X1'))}" class="gate-active"/>`);
   const [sx,sy]=point('X0'),[mx,my]=point('M'),[ex,ey]=point('X1');
-  html.push(`${circle(sx,sy,52,'source-beacon')}${circle(sx,sy,41,'central-node')}${circle(mx,my,32,'central-node')}${circle(ex,ey,41,'central-node out')}`);
+  html.push(`${circle(sx,sy,48,'source-beacon')}${circle(sx,sy,41,'central-node')}${circle(sx,sy,35,'node-inner-ring')}${circle(mx,my,32,'central-node')}${circle(mx,my,26,'node-inner-ring')}${circle(ex,ey,41,'central-node out')}${circle(ex,ey,35,'node-inner-ring')}`);
   const seenExit=positions.filter(x=>x==='X1').length,inside=cfg.N-(occupancy.X0||0)-seenExit;
   html.push(`<text x="${sx}" y="${sy-7}" class="central-count">${occupancy.X0||0}</text><text x="${sx}" y="${sy+11}" class="central-title">LEFT</text>`);
   html.push(`<text x="${mx}" y="${my-2}" class="central-count" style="font-size:17px">${occupancy.M||0}</text><text x="${mx}" y="${my+12}" class="central-title" style="font-size:9px">MERGE</text>`);
@@ -227,4 +250,29 @@ function attachControls(){
     if(e.key==='ArrowLeft')setTick(Math.ceil(position)-1);if(e.key==='ArrowRight')setTick(Math.floor(position)+1);if(e.key===' '){e.preventDefault();playing=!playing;pulseEnd=0}
   });
 }
-queryScenario();attachControls();run(true);requestAnimationFrame(animate);
+function attachDefinitions(){
+  const bubble=$('definition-popover');let active=null,pinned=false;
+  const place=target=>{
+    const rect=target.getBoundingClientRect(),width=272,margin=12;
+    bubble.style.left=`${clamp(rect.left+rect.width/2-width/2,margin,innerWidth-width-margin)}px`;
+    const top=rect.bottom+12;
+    if(top+bubble.offsetHeight>innerHeight-12){bubble.style.top=`${Math.max(10,rect.top-bubble.offsetHeight-12)}px`;bubble.dataset.placement='top'}
+    else{bubble.style.top=`${top}px`;bubble.dataset.placement='bottom'}
+  };
+  const hide=()=>{bubble.hidden=true;if(active)active.setAttribute('aria-expanded','false');active=null;pinned=false};
+  const show=el=>{if(active&&active!==el)active.setAttribute('aria-expanded','false');active=el;bubble.textContent=el.dataset.definition;bubble.hidden=false;el.setAttribute('aria-expanded','true');place(el)};
+  document.querySelectorAll('.info-trigger').forEach(el=>{
+    el.setAttribute('aria-expanded','false');
+    el.setAttribute('aria-describedby','definition-popover');
+    el.addEventListener('click',e=>{e.stopPropagation();if(active===el&&pinned)hide();else{pinned=true;show(el)}});
+    el.addEventListener('mouseenter',()=>{if(!pinned)show(el)});
+    el.addEventListener('mouseleave',()=>{if(!pinned&&!el.matches(':focus'))hide()});
+    el.addEventListener('focus',()=>{if(!pinned)show(el)});
+    el.addEventListener('blur',()=>{if(!pinned)hide()});
+  });
+  document.addEventListener('click',e=>{if(!e.target.closest('.info-trigger'))hide()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')hide()});
+  window.addEventListener('resize',()=>{if(active)place(active)});
+  window.addEventListener('scroll',()=>{if(active)place(active)},true);
+}
+queryScenario();attachControls();attachDefinitions();run(true);requestAnimationFrame(animate);
